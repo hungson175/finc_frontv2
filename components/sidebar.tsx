@@ -9,11 +9,17 @@ export function Sidebar() {
 
   const handleNewChat = async () => {
     try {
-      const response = await fetch('/reset_chat', {
+      const response = await fetch('http://localhost:8000/reset_chat', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
       })
+      
       if (response.ok) {
-        router.refresh()
+        window.location.reload()
+      } else {
+        console.error('Failed to reset chat:', await response.text())
       }
     } catch (error) {
       console.error('Failed to reset chat:', error)
