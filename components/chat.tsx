@@ -30,12 +30,12 @@ export function Chat() {
     websocketRef.current = new WebSocket('ws://localhost:8000/ws/chat')
 
     // Connection opened
-    websocketRef.current.addEventListener('open', (event) => {
+    websocketRef.current.addEventListener('open', () => {
       console.log('Connected to WebSocket')
     })
 
     // Connection closed
-    websocketRef.current.addEventListener('close', (event) => {
+    websocketRef.current.addEventListener('close', () => {
       console.log('Disconnected from WebSocket')
     })
 
