@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { ChatMessage } from './chat-message'
 import { ChatInput } from './chat-input'
-import { streamingResponse } from '@/app/actions'
 
 export type Message = {
   id: string
@@ -15,6 +14,7 @@ export function Chat() {
   const [messages, setMessages] = useState<Message[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const websocketRef = useRef<WebSocket | null>(null)
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -24,8 +24,31 @@ export function Chat() {
     scrollToBottom()
   }, [messages])
 
+  // Initialize WebSocket connection
+  useEffect(() => {
+    // Create WebSocket connection
+    websocketRef.current = new WebSocket('ws://localhost:8000/ws/chat')
+
+    // Connection opened
+    websocketRef.current.addEventListener('open', (event) => {
+      console.log('Connected to WebSocket')
+    })
+
+    // Connection closed
+    websocketRef.current.addEventListener('close', (event) => {
+      console.log('Disconnected from WebSocket')
+    })
+
+    // Clean up on unmount
+    return () => {
+      if (websocketRef.current) {
+        websocketRef.current.close()
+      }
+    }
+  }, [])
+
   const handleSubmit = async (input: string) => {
-    if (!input.trim() || isLoading) return
+    if (!input.trim() || isLoading || !websocketRef.current) return
 
     // Add user message
     const userMessage: Message = {
@@ -45,19 +68,24 @@ export function Chat() {
     setMessages(prev => [...prev, assistantMessage])
 
     try {
-      // Get the streaming response
-      const response = await streamingResponse(input)
-      const reader = response.getReader()
-      const decoder = new TextDecoder()
       let streamedContent = ''
 
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
+      // Set up message handler for this conversation
+      const messageHandler = (event: MessageEvent) => {
+        const token = event.data
+        
+        // Check if streaming has ended
+        if (token === '[END_STREAMING_asdf321]') {
+          setIsLoading(false)
+          // Remove the message handler after streaming is complete
+          if (websocketRef.current) {
+            websocketRef.current.removeEventListener('message', messageHandler)
+          }
+          return
+        }
 
-        // Decode the streamed content
-        const chunk = decoder.decode(value, { stream: true })
-        streamedContent += chunk
+        // Append new token to streamed content
+        streamedContent += token
 
         // Update the assistant message with the streamed content
         setMessages(prev => 
@@ -68,6 +96,13 @@ export function Chat() {
           )
         )
       }
+
+      // Add message handler
+      websocketRef.current.addEventListener('message', messageHandler)
+
+      // Send the user's message through WebSocket
+      websocketRef.current.send(input)
+
     } catch (error) {
       console.error('Error:', error)
       // Update the assistant message with an error message
@@ -78,7 +113,6 @@ export function Chat() {
             : msg
         )
       )
-    } finally {
       setIsLoading(false)
     }
   }
