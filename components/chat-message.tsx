@@ -25,7 +25,10 @@ export function ChatMessage({ role, content }: ChatMessageProps) {
                   h3: ({node, ...props}) => <h3 className="text-lg font-bold my-2" {...props}/>,
                   ul: ({node, ...props}) => <ul className="list-disc ml-4 my-2" {...props}/>,
                   li: ({node, ...props}) => <li className="my-1" {...props}/>,
-                  p: ({node, ...props}) => <p className="my-2" {...props}/>
+                  p: ({node, ...props}) => <p className="my-2" {...props}/>,
+                  ol: ({node, ordered, ...props}) => (
+                    <ol className="list-decimal ml-4 my-2" {...props} ordered={ordered ? "true" : undefined} />
+                  )
                 }}
               >
                 {content}
