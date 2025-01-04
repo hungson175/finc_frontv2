@@ -1,5 +1,6 @@
 import { Copy, ThumbsDown, ThumbsUp, MoreHorizontal } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import ReactMarkdown from 'react-markdown'
 
 interface ChatMessageProps {
   role: 'user' | 'assistant'
@@ -15,7 +16,11 @@ export function ChatMessage({ role, content }: ChatMessageProps) {
         </div>
         <div className="flex-1 space-y-4">
           <div className="prose prose-slate max-w-none">
-            {content}
+            {role === 'assistant' ? (
+              <ReactMarkdown>{content}</ReactMarkdown>
+            ) : (
+              content
+            )}
           </div>
           {role === 'assistant' && (
             <div className="flex items-center gap-2">
